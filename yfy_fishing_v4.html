@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YFY Mail — 社交工程演練 v20250415</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:#f3f2f1;color:#201f1e;font-family:'Noto Sans TC','Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.5;}
+::-webkit-scrollbar{width:6px;} ::-webkit-scrollbar-track{background:transparent;} ::-webkit-scrollbar-thumb{background:#c8c6c4;border-radius:3px;}
+
+/* ── RIBBON ── */
+#ribbon{height:52px;background:#0078d4;display:flex;align-items:center;padding:0 16px;flex-shrink:0;position:relative;z-index:100;}
+.ribbon-brand{display:flex;align-items:center;gap:10px;padding-right:16px;border-right:1px solid rgba(255,255,255,0.25);margin-right:16px;}
+.ribbon-brand img{height:26px;border-radius:3px;}
+.ribbon-brand-text{}
+.ribbon-title{color:#fff;font-size:15px;font-weight:700;line-height:1.2;}
+.ribbon-ver{color:rgba(255,255,255,0.65);font-size:10px;font-weight:500;letter-spacing:0.04em;}
+.ribbon-nav{display:flex;align-items:center;gap:2px;flex:1;}
+.ribbon-btn{color:rgba(255,255,255,0.88);padding:0 12px;height:52px;display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;transition:background .1s;border:none;background:transparent;white-space:nowrap;}
+.ribbon-btn:hover{background:rgba(255,255,255,0.15);}
+.ribbon-btn svg{width:15px;height:15px;flex-shrink:0;}
+.ribbon-drill-tag{display:flex;align-items:center;gap:5px;background:rgba(255,200,0,0.2);border:1px solid rgba(255,200,0,0.4);color:#ffe566;padding:4px 10px;border-radius:3px;font-size:12px;font-weight:700;}
+.ribbon-right{display:flex;align-items:center;gap:8px;margin-left:auto;}
+.score-pill{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:12px;font-size:13px;font-weight:700;border:1px solid;}
+.sp-ok{background:rgba(107,205,150,0.2);border-color:rgba(107,205,150,0.45);color:#c3efda;}
+.sp-fail{background:rgba(255,120,117,0.2);border-color:rgba(255,120,117,0.45);color:#ffb3b1;}
+.sp-rem{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);color:#fff;}
+.sp-num{font-size:16px;line-height:1;}
+.status-tag{font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;border-radius:3px;background:rgba(255,255,255,0.18);color:#fff;}
+
+/* ── SECONDARY BAR ── */
+#secondbar{height:34px;background:#fff;border-bottom:1px solid #edebe9;display:flex;align-items:center;padding:0 0 0 6px;flex-shrink:0;}
+.sb-btn{height:34px;padding:0 10px;display:flex;align-items:center;gap:5px;font-size:12px;color:#605e5c;cursor:pointer;border:none;background:transparent;border-radius:2px;transition:background .1s;white-space:nowrap;}
+.sb-btn:hover{background:#f3f2f1;}
+.sb-btn svg{width:13px;height:13px;}
+.sb-sep{width:1px;height:18px;background:#edebe9;margin:0 2px;}
+.sb-right{margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:14px;}
+.progress-wrap{width:100px;height:3px;background:#edebe9;border-radius:2px;overflow:hidden;}
+.progress-fill{height:100%;background:#0078d4;transition:width .4s;}
+.sb-counter{font-size:11px;color:#a19f9d;}
+
+/* ── MAIN 3-PANE ── */
+#app{display:flex;flex:1;overflow:hidden;min-height:0;}
+
+/* ── LIST PANE ── */
+#pane-list{width:310px;flex-shrink:0;background:#fff;border-right:1px solid #edebe9;display:flex;flex-direction:column;}
+#list-header{padding:10px 14px 8px;border-bottom:1px solid #edebe9;}
+.list-title{font-size:18px;font-weight:700;color:#201f1e;display:flex;align-items:center;justify-content:space-between;}
+.list-stats{margin-top:5px;display:flex;align-items:center;gap:6px;}
+.stat-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;border:1px solid;}
+.sc-total{background:#f3f2f1;border-color:#edebe9;color:#605e5c;}
+.sc-rand{background:#e1effa;border-color:#b3d4f5;color:#0078d4;}
+.sc-left{background:#fff4ce;border-color:#f0d060;color:#7a5c00;}
+#email-list{flex:1;overflow-y:auto;}
+.mail-item{padding:10px 12px;border-bottom:1px solid #f3f2f1;cursor:pointer;transition:background .1s;position:relative;display:flex;gap:10px;}
+.mail-item:hover{background:#f3f2f1;}
+.mail-item.selected{background:#deecf9;}
+.mail-item.selected::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#0078d4;}
+.mail-item.done{opacity:0.48;}
+.mail-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;color:#fff;}
+.mail-ct{flex:1;min-width:0;}
+.mail-r1{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px;}
+.mail-sn{font-size:13px;font-weight:700;color:#201f1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;}
+.mail-tm{font-size:10px;color:#a19f9d;flex-shrink:0;}
+.mail-sub{font-size:12px;color:#201f1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;}
+.mail-snip{font-size:11px;color:#605e5c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.mail-badge{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+.mb-ok{background:#dff6dd;color:#107c10;border:1px solid #92d585;}
+.mb-fail{background:#fde7e9;color:#a4262c;border:1px solid #f1a4a7;}
+.unread-dot{width:6px;height:6px;border-radius:50%;background:#0078d4;flex-shrink:0;margin-top:7px;}
+
+/* ── MONITOR PANE ── */
+#pane-mon{width:240px;flex-shrink:0;background:#faf9f8;border-right:1px solid #edebe9;display:flex;flex-direction:column;}
+.mon-hdr{padding:7px 14px;border-bottom:1px solid #edebe9;background:#fff;display:flex;align-items:center;justify-content:space-between;}
+.mon-title{font-size:10px;font-weight:700;color:#605e5c;text-transform:uppercase;letter-spacing:.1em;}
+.mon-dot{width:7px;height:7px;border-radius:50%;background:#d83b01;}
+.mon-dot.live{background:#107c10;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.mon-body{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px;gap:0;}
+.topo-node{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.topo-box{width:54px;height:54px;border-radius:4px;background:#fff;border:1px solid #edebe9;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.05);transition:all .3s;}
+.topo-box svg{width:22px;height:22px;color:#605e5c;}
+.topo-box.gb{border-color:#0078d4;box-shadow:0 0 0 3px rgba(0,120,212,.12);}
+.topo-box.gg{border-color:#107c10;box-shadow:0 0 0 3px rgba(16,124,16,.12);}
+.topo-box.gr{border-color:#a4262c;box-shadow:0 0 0 3px rgba(164,38,44,.12);}
+.topo-lbl{font-size:9px;font-weight:700;color:#a19f9d;text-transform:uppercase;letter-spacing:.06em;}
+.topo-conn{height:56px;width:2px;background:#edebe9;position:relative;display:flex;justify-content:center;}
+.topo-conn::after{content:'';position:absolute;width:6px;height:6px;border-right:2px solid #c8c6c4;border-bottom:2px solid #c8c6c4;transform:rotate(45deg);bottom:2px;}
+@keyframes pktDrop{0%{top:-4px;opacity:0;}10%{opacity:1;}85%{opacity:1;}100%{top:50px;opacity:0;}}
+#pkt{position:absolute;display:none;width:28px;height:20px;background:#fff;border:1px solid #0078d4;border-radius:3px;left:50%;transform:translateX(-50%);box-shadow:0 2px 8px rgba(0,120,212,.18);align-items:center;justify-content:center;z-index:5;}
+#pkt.run{display:flex;animation:pktDrop 1.5s ease-in-out forwards;}
+#pkt svg{width:13px;height:13px;color:#0078d4;}
+.mon-status{margin-top:18px;background:#fff;border:1px solid #edebe9;border-radius:3px;padding:7px 10px;font-size:11px;color:#605e5c;text-align:center;width:100%;box-shadow:0 1px 3px rgba(0,0,0,.03);}
+
+/* ── READ PANE ── */
+#pane-read{flex:1;background:#fff;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+#panel-idle{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#a19f9d;gap:10px;}
+.idle-icon{width:60px;height:60px;border-radius:50%;background:#f3f2f1;display:flex;align-items:center;justify-content:center;}
+.idle-icon svg{width:26px;height:26px;color:#a19f9d;}
+#panel-active{flex:1;display:none;flex-direction:column;overflow:hidden;min-height:0;position:relative;}
+#panel-overlay{position:absolute;inset:0;z-index:50;background:rgba(255,255,255,.82);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;}
+.ov-card{background:#fff;border:1px solid #edebe9;border-radius:4px;padding:22px 30px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.08);}
+.ov-title{font-size:14px;font-weight:700;color:#201f1e;margin-bottom:4px;}
+.ov-sub{font-size:11px;color:#a19f9d;}
+
+/* Read header */
+#read-hdr{padding:14px 22px 12px;border-bottom:1px solid #edebe9;flex-shrink:0;}
+.read-subj{font-size:19px;font-weight:700;color:#201f1e;line-height:1.3;margin-bottom:10px;}
+.read-meta{display:flex;align-items:flex-start;gap:10px;}
+.read-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;color:#fff;}
+.read-info{}
+.read-name{font-size:13px;font-weight:700;color:#201f1e;}
+.read-addr{font-size:11px;color:#605e5c;font-family:'Courier New',monospace;background:#f3f2f1;border:1px solid #edebe9;padding:1px 5px;border-radius:2px;display:inline-block;margin-top:2px;}
+.read-to{font-size:10px;color:#a19f9d;margin-top:2px;}
+.read-time{margin-left:auto;font-size:11px;color:#a19f9d;display:flex;align-items:center;gap:3px;flex-shrink:0;padding-top:1px;}
+.read-time svg{width:11px;height:11px;}
+
+/* Action bar (top — decorative only) */
+#read-topbar{display:flex;align-items:center;gap:4px;padding:5px 22px;border-bottom:1px solid #edebe9;background:#faf9f8;flex-shrink:0;}
+.topbar-btn{padding:4px 10px;border-radius:2px;border:1px solid #edebe9;background:#fff;font-size:12px;color:#605e5c;cursor:default;display:flex;align-items:center;gap:4px;opacity:.55;}
+.topbar-btn svg{width:12px;height:12px;}
+.topbar-sep{width:1px;height:18px;background:#edebe9;margin:0 3px;}
+
+/* Body */
+#read-body-wrap{flex:1;overflow-y:auto;padding:18px 22px 12px;}
+.read-body-txt{font-size:14px;line-height:1.8;color:#201f1e;white-space:pre-wrap;margin-bottom:14px;}
+.att-card{display:none;align-items:center;gap:10px;padding:10px 14px;border:1px solid #edebe9;border-radius:3px;background:#faf9f8;max-width:400px;margin-bottom:16px;}
+.att-icon{width:30px;height:30px;border-radius:3px;background:#0078d4;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.att-icon svg{width:15px;height:15px;color:#fff;}
+.att-lbl{font-size:9px;color:#a19f9d;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px;font-weight:700;}
+.att-url{font-size:11px;color:#0078d4;font-family:'Courier New',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px;}
+
+/* ── DECISION AREA (bottom of reading pane) ── */
+#decision-area{flex-shrink:0;padding:8px 22px 10px;border-top:2px solid #edebe9;background:#fff;}
+.dec-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#a19f9d;margin-bottom:7px;display:flex;align-items:center;gap:6px;}
+.dec-label::before,.dec-label::after{content:'';flex:1;height:1px;background:#edebe9;}
+.dec-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.dec-btn{padding:9px 14px;border-radius:3px;border:2px solid;cursor:pointer;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;transition:all .15s;font-family:'Noto Sans TC',sans-serif;}
+.dec-btn:active{transform:scale(.98);}
+.dec-safe{background:#f1faf1;border-color:#107c10;color:#0e6b0e;}
+.dec-safe:hover{background:#dff6dd;border-color:#0b5a0b;}
+.dec-risk{background:#fef6f6;border-color:#a4262c;color:#8c1f24;}
+.dec-risk:hover{background:#fde7e9;border-color:#8c1f24;}
+.dec-btn-icon{font-size:18px;line-height:1;flex-shrink:0;}
+.dec-btn-main{font-size:14px;font-weight:700;line-height:1.2;}
+.dec-btn-sub{display:none;}
+.dec-btn.disabled{opacity:.3;pointer-events:none;}
+
+/* ── RESULT MODAL ── */
+#result-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;}
+#result-modal{background:#fff;border:1px solid #d2d0ce;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:100%;max-width:860px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;animation:dlg .18s ease-out;}
+@keyframes dlg{from{transform:translateY(-10px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* Result title bar — BIG COLORED */
+.dlg-titlebar{padding:0;flex-shrink:0;display:flex;flex-direction:column;}
+.dlg-verdict{display:flex;align-items:center;gap:16px;padding:18px 24px;}
+.verdict-icon{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.vi-ok{background:#dff6dd;border:2px solid #92d585;}
+.vi-fail{background:#fde7e9;border:2px solid #f1a4a7;}
+.verdict-icon svg{width:26px;height:26px;}
+.verdict-text{}
+.verdict-main{font-size:24px;font-weight:800;line-height:1.1;}
+.vt-ok{color:#107c10;}
+.vt-fail{color:#a4262c;}
+.verdict-sub{font-size:13px;color:#605e5c;margin-top:3px;}
+.verdict-tag{margin-left:auto;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:800;letter-spacing:.04em;flex-shrink:0;}
+.vtag-ok{background:#dff6dd;color:#107c10;border:2px solid #92d585;}
+.vtag-fail{background:#fde7e9;color:#a4262c;border:2px solid #f1a4a7;}
+.dlg-body{display:flex;flex:1;overflow:hidden;min-height:0;}
+
+.dlg-left{width:50%;padding:16px 22px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;}
+.dlg-analysis{background:#f3f2f1;border-left:3px solid #0078d4;border-radius:0 3px 3px 0;padding:13px 16px;}
+.dlg-ana-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:#0078d4;margin-bottom:8px;}
+.dlg-ana-text{font-size:13px;color:#201f1e;line-height:1.8;white-space:pre-wrap;}
+.btn-next{width:100%;padding:11px;background:#0078d4;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:6px;transition:background .1s;margin-top:auto;}
+.btn-next:hover{background:#106ebe;}
+.btn-next svg{width:14px;height:14px;}
+
+.dlg-right{width:50%;border-left:1px solid #edebe9;overflow-y:auto;background:#faf9f8;}
+.ref-hdr{padding:12px 18px;border-bottom:1px solid #edebe9;background:#fff;position:sticky;top:0;z-index:1;}
+.ref-tag{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#605e5c;background:#f3f2f1;border:1px solid #edebe9;padding:2px 7px;border-radius:2px;display:inline-block;margin-bottom:7px;}
+.ref-subj{font-size:14px;font-weight:700;color:#201f1e;margin-bottom:7px;}
+.ref-row{display:flex;gap:7px;margin-bottom:3px;}
+.ref-k{font-size:10px;color:#a19f9d;width:38px;flex-shrink:0;font-weight:700;padding-top:1px;}
+.ref-v{font-size:12px;color:#201f1e;}
+.ref-addr{font-family:'Courier New',monospace;font-size:10px;color:#605e5c;background:#f3f2f1;border:1px solid #edebe9;padding:1px 5px;border-radius:2px;}
+.ref-body{padding:14px 18px;font-size:13px;color:#201f1e;line-height:1.8;white-space:pre-wrap;border-top:1px solid #edebe9;}
+.ref-link-box{margin:0 18px 14px;padding:9px 12px;background:#fff;border:1px solid #edebe9;border-radius:3px;}
+.ref-link-lbl{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#605e5c;margin-bottom:3px;}
+.ref-link-url{font-family:'Courier New',monospace;font-size:10px;color:#0078d4;word-break:break-all;}
+
+/* ── FINAL DIALOG ── */
+#final-overlay{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:20px;}
+#final-modal{background:#fff;border:1px solid #d2d0ce;border-radius:4px;box-shadow:0 8px 32px rgba(0,0,0,.2);width:100%;max-width:380px;overflow:hidden;animation:dlg .2s ease-out;}
+.fin-top{background:#0078d4;padding:22px;text-align:center;}
+.fin-top-icon{font-size:38px;margin-bottom:6px;}
+.fin-top-sub{color:rgba(255,255,255,.75);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px;}
+.fin-top-title{color:#fff;font-size:22px;font-weight:800;}
+.fin-body{padding:22px;}
+.fin-score-wrap{text-align:center;margin-bottom:18px;}
+.fin-score{font-size:64px;font-weight:800;color:#0078d4;line-height:1;}
+.fin-score-denom{font-size:14px;color:#a19f9d;margin-top:1px;}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.fin-card{padding:13px;border-radius:3px;text-align:center;border:1px solid;}
+.fc-ok{background:#f1faf1;border-color:#92d585;}
+.fc-fail{background:#fef6f6;border-color:#f1a4a7;}
+.fc-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px;}
+.fc-ok .fc-lbl{color:#107c10;} .fc-fail .fc-lbl{color:#a4262c;}
+.fc-num{font-size:36px;font-weight:800;line-height:1;}
+.fc-ok .fc-num{color:#107c10;} .fc-fail .fc-num{color:#a4262c;}
+.btn-restart{width:100%;padding:11px;background:#0078d4;color:#fff;border:none;border-radius:3px;cursor:pointer;font-size:14px;font-weight:700;transition:background .1s;}
+.btn-restart:hover{background:#106ebe;}
+
+/* Avatar colours */
+.av-blue{background:#0078d4;} .av-teal{background:#008272;} .av-green{background:#107c10;}
+.av-red{background:#d13438;} .av-purple{background:#8764b8;} .av-orange{background:#ca5010;}
+.av-amber{background:#986f0b;} .av-slate{background:#69797e;}
+</style>
+</head>
+<body style="display:flex;flex-direction:column;height:100vh;overflow:hidden;">
+
+<!-- RIBBON -->
+<div id="ribbon">
+  <div class="ribbon-brand">
+    <img src="https://cmlee.myds.me/work/yfy.jpg" alt="YFY">
+    <div class="ribbon-brand-text">
+      <div class="ribbon-title">YFY Mail</div>
+      <div class="ribbon-ver">Build v20250415 &nbsp;|&nbsp; 資安意識演練平台</div>
+    </div>
+  </div>
+  <div class="ribbon-nav">
+    <button class="ribbon-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>新增
+    </button>
+    <button class="ribbon-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>回覆
+    </button>
+    <button class="ribbon-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>轉寄
+    </button>
+    <div style="width:1px;height:28px;background:rgba(255,255,255,.2);margin:0 6px;"></div>
+    <div class="ribbon-drill-tag">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+      社交工程演練模式
+    </div>
+  </div>
+  <div class="ribbon-right">
+    <div class="score-pill sp-ok">✓&nbsp;<span class="sp-num" id="score-ok">0</span></div>
+    <div class="score-pill sp-fail">✗&nbsp;<span class="sp-num" id="score-fail">0</span></div>
+    <div class="score-pill sp-rem">剩&nbsp;<span class="sp-num" id="score-rem">10</span></div>
+    <div class="status-tag" id="status-tag">IDLE</div>
+  </div>
+</div>
+
+<!-- SECONDARY BAR -->
+<div id="secondbar">
+  <button class="sb-btn" style="font-weight:600;color:#201f1e;">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+    收件匣
+  </button>
+  <div class="sb-sep"></div>
+  <button class="sb-btn" style="color:#a4262c;">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+    釣魚郵件回報
+  </button>
+  <div class="sb-right">
+    <span class="sb-counter" id="sb-counter">0 / 10 完成</span>
+    <div class="progress-wrap"><div class="progress-fill" id="prog-fill"></div></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="app" style="flex:1;overflow:hidden;min-height:0;">
+
+  <!-- LIST -->
+  <div id="pane-list">
+    <div id="list-header">
+      <div class="list-title">
+        收件匣
+        <span style="font-size:13px;font-weight:600;color:#a19f9d;" id="inbox-num">10 封</span>
+      </div>
+      <div class="list-stats">
+        <span class="stat-chip sc-total">題庫共 <strong>65</strong> 題</span>
+        <span class="stat-chip sc-rand">本次隨機抽選 <strong>10</strong> 題</span>
+        <span class="stat-chip sc-left">剩 <strong id="left-num">10</strong> 封</span>
+      </div>
+    </div>
+    <div id="email-list"></div>
+  </div>
+
+  <!-- MONITOR -->
+  <div id="pane-mon">
+    <div class="mon-hdr">
+      <span class="mon-title">Traffic Monitor</span>
+      <div class="mon-dot" id="mon-dot"></div>
+    </div>
+    <div class="mon-body">
+      <div class="topo-node">
+        <div class="topo-box" id="topo-s">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/></svg>
+        </div>
+        <span class="topo-lbl">寄件者</span>
+      </div>
+      <div class="topo-conn" style="position:relative;">
+        <div id="pkt">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+      </div>
+      <div class="topo-node">
+        <div class="topo-box" id="topo-r">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+        </div>
+        <span class="topo-lbl">收件者</span>
+      </div>
+      <div class="mon-status" id="mon-status">等待信件...</div>
+    </div>
+  </div>
+
+  <!-- READ PANE -->
+  <div id="pane-read">
+    <div id="panel-idle">
+      <div class="idle-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+      </div>
+      <span style="font-size:13px;">從左側選取郵件開始演練</span>
+    </div>
+
+    <div id="panel-active">
+      <div id="panel-overlay">
+        <div class="ov-card">
+          <div class="ov-title">此題已完成</div>
+          <div class="ov-sub">請從左側選取其他信件繼續</div>
+        </div>
+      </div>
+
+      <!-- Email Header -->
+      <div id="read-hdr">
+        <div class="read-subj" id="read-subj"></div>
+        <div class="read-meta">
+          <div class="read-av" id="read-av"></div>
+          <div class="read-info">
+            <div class="read-name" id="read-name"></div>
+            <div class="read-addr" id="read-addr"></div>
+            <div class="read-to">收件者：您 (YFY Employee)</div>
+          </div>
+          <div class="read-time">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span id="read-time-txt"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top action bar (decorative) -->
+      <div id="read-topbar">
+        <div class="topbar-btn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/></svg>回覆</div>
+        <div class="topbar-btn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7"/></svg>轉寄</div>
+        <div class="topbar-sep"></div>
+        <div class="topbar-btn"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path stroke-linecap="round" stroke-linejoin="round" d="M19 6l-1 14H6L5 6"/></svg>刪除</div>
+      </div>
+
+      <!-- Body -->
+      <div id="read-body-wrap">
+        <div class="read-body-txt" id="read-body"></div>
+        <div class="att-card" id="att-card">
+          <div class="att-icon"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg></div>
+          <div><div class="att-lbl">附件 / 連結</div><div class="att-url" id="att-url"></div></div>
+        </div>
+      </div>
+
+      <!-- DECISION AREA — bottom -->
+      <div id="decision-area">
+        <div class="dec-label">您的判斷 · Your Decision</div>
+        <div class="dec-grid">
+          <button class="dec-btn dec-safe" id="btn-safe" onclick="takeAction('safe')">
+            <div class="dec-btn-icon">✅</div>
+            <div class="dec-btn-main">正常郵件 (Safe)</div>
+            <div class="dec-btn-sub">Safe Business Email</div>
+          </button>
+          <button class="dec-btn dec-risk" id="btn-risk" onclick="takeAction('risk')">
+            <div class="dec-btn-icon">⚠️</div>
+            <div class="dec-btn-main">風險郵件 (Phishing)</div>
+            <div class="dec-btn-sub">Potential Threat / BEC</div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div id="result-overlay">
+  <div id="result-modal">
+    <div class="dlg-titlebar">
+      <!-- BIG VERDICT BAR -->
+      <div id="verdict-bar" style="padding:16px 24px;border-bottom:2px solid #edebe9;">
+        <div class="dlg-verdict" style="padding:0;">
+          <div class="verdict-icon" id="v-icon"></div>
+          <div class="verdict-text">
+            <div class="verdict-main" id="v-main"></div>
+            <div class="verdict-sub" id="v-sub"></div>
+          </div>
+          <div class="verdict-tag" id="v-tag"></div>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-body">
+      <div class="dlg-left">
+        <div class="dlg-analysis">
+          <div class="dlg-ana-title">Analysis — 重點分析</div>
+          <div class="dlg-ana-text" id="dlg-ana"></div>
+        </div>
+        <button class="btn-next" id="btn-next" onclick="advanceToNext()">
+          <span id="btn-next-lbl">下一封郵件</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+        </button>
+      </div>
+      <div class="dlg-right">
+        <div class="ref-hdr">
+          <div class="ref-tag">Reference — 原始信件</div>
+          <div class="ref-subj" id="ref-subj"></div>
+          <div class="ref-row"><span class="ref-k">From</span><span class="ref-v" id="ref-sender"></span></div>
+          <div class="ref-row"><span class="ref-k">Email</span><span class="ref-addr" id="ref-email"></span></div>
+        </div>
+        <div class="ref-body" id="ref-body"></div>
+        <div class="ref-link-box" id="ref-link-box" style="display:none;">
+          <div class="ref-link-lbl">Link / Attachment</div>
+          <div class="ref-link-url" id="ref-link-url"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="final-overlay">
+  <div id="final-modal">
+    <div class="fin-top">
+      <div class="fin-top-icon">🏆</div>
+      <div class="fin-top-sub">Security Awareness Score</div>
+      <div class="fin-top-title">測驗完成</div>
+    </div>
+    <div class="fin-body">
+      <div class="fin-score-wrap">
+        <div class="fin-score" id="fin-score">0</div>
+        <div class="fin-score-denom">/ 100 分</div>
+      </div>
+      <div class="fin-grid">
+        <div class="fin-card fc-ok"><div class="fc-lbl">Correct</div><div class="fc-num" id="fin-ok">0</div></div>
+        <div class="fin-card fc-fail"><div class="fc-lbl">Wrong</div><div class="fc-num" id="fin-fail">0</div></div>
+      </div>
+      <button class="btn-restart" onclick="restartGame()">重新測驗（隨機抽選）</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const db=[
+{id:1,type:"phishing",senderName:"Oracle Cloud Support",senderEmail:"security@oracle-cloud-yfy-verify.com",subject:"【緊急】Oracle ERP 帳戶異常登入警示",body:"系統偵測到您的 Oracle EBS 帳號於 2025/04/14 23:47 在非公司 IP 進行登入。\nIP來源：中國北京\n\n請立即點擊下方連結驗證身份，否則帳號將於 10 分鐘後鎖定，影響 ERP 簽核權限。",link:"http://oracle-validate-yfy.net/login",explanation:"⚠️ 風險指標：\n1. 網域非官方（@yfy.com 或 @oracle.com），多了 verify 字樣偽造信任。\n2. 製造緊迫感（10 分鐘後鎖定）。\n3. 連結網域為偽造釣魚網站。\n4. 真正的 ERP 帳號鎖定通知由公司 IT 窗口處理，不會有外部連結。"},
+{id:2,type:"normal",senderName:"資訊處 (IT)",senderEmail:"it-service@yfy.com",subject:"【公告】Oracle ERP R12 例行維護通知 2025/04",body:"各位同仁好，\n\n本月維護時間：04/19（六）08:00~11:00\n作業內容：Oracle 資料庫效能優化及 Patch 更新。\n維護期間 ERP 系統暫停服務，請提前完成相關簽核作業。\n\n詳細排程請見內部 Portal 公告。",link:"http://portal.yfy.com/it/maintenance-0419",explanation:"✅ 安全特徵：\n1. 來自內部資訊單位官方信箱（@yfy.com）。\n2. 連結指向公司內部 Portal。\n3. 預告維護時間和內容，符合 IT 標準作業。"},
+{id:3,type:"phishing",senderName:"SAP 台灣官方",senderEmail:"support@sap-taiwan-update.net",subject:"SAP S/4HANA 2025 重要安全性更新需立即安裝",body:"親愛的系統用戶，\n\nSAP 已發布 2025 Q1 關鍵安全性更新（Security Note 3504615），您的 SAP 系統存在高危漏洞。\n\n請下載並執行附件中的安裝程式，否則系統帳號將於 72 小時後被停用。",link:"attachment: SAP_Security_Patch_Q1_2025.exe",explanation:"⚠️ 風險指標：\n1. SAP 更新由公司 IT 統一部署，不會個別寄信要求下載 .exe。\n2. 網域 sap-taiwan-update.net 為偽造，官方網域是 sap.com。\n3. 附件為 .exe 執行檔，高風險為惡意程式。"},
+{id:4,type:"normal",senderName:"Oracle Workflow",senderEmail:"workflow@yfy.com",subject:"【待簽核】採購申請單 PR-20250415-0083",body:"您有一筆待簽核的採購申請單：\n\n申請人：陳志宏（工務部）\n項目：廠房耗材補充採購\n金額：TWD 128,000\n期限：請於 2 個工作天內完成簽核\n\n請登入 Oracle ERP 系統進行審核。",link:"http://erp.yfy.com/workflow/PR-20250415-0083",explanation:"✅ 安全特徵：\n1. 系統自動通知，來自 @yfy.com 內部信箱。\n2. 連結正確指向公司內部 ERP 網址 erp.yfy.com。\n3. 內容具體，符合正常採購簽核流程。"},
+{id:5,type:"phishing",senderName:"IT Helpdesk",senderEmail:"helpdesk@yfy-erp-portal.com",subject:"您的 Oracle ERP 密碼將於今日到期，請立即更新",body:"您的 Oracle ERP 登入密碼將於今日 18:00 到期。\n\n為確保您能繼續正常使用系統，請點擊下方連結在截止前完成密碼重設。\n\n[立即重設密碼]",link:"http://yfy-erp-reset.com/change-password",explanation:"⚠️ 風險指標：\n1. 自稱 IT 但信箱網域 yfy-erp-portal.com 為偽造（非 @yfy.com）。\n2. 公司密碼重設通常透過內網 AD 系統，不會有外部連結。\n3. 釣魚網站模仿登入頁面騙取舊密碼。"},
+{id:6,type:"normal",senderName:"財務部",senderEmail:"finance@yfy.com",subject:"【提醒】2025年4月 Oracle ERP 月結關帳作業",body:"各單位主管，\n\n2025年4月 ERP 關帳日為 5/2（五）。\n\n請確認以下事項：\n• 所有請款單、驗收單需於 5/1 前完成立帳\n• 差旅費用需於 5/1 前完成申請\n\n關帳作業說明請參閱內部 Portal 附件。",link:"attachment: 202504_month_end_guide.pdf",explanation:"✅ 安全特徵：\n1. 來自公司財務部官方信箱（@yfy.com）。\n2. 附件為 PDF 說明文件，無異常連結。\n3. 內容符合每月關帳作業常規。"},
+{id:7,type:"phishing",senderName:"Oracle License Team",senderEmail:"licensing@oracle-license-renewal.com",subject:"【緊急】Oracle 授權到期通知－需於 3 日內續約",body:"您的 Oracle Database 授權將於 2025/04/18 到期。\n\n若未完成續約，系統將自動停止服務，影響全公司 ERP 作業。\n\n請點擊下方連結完成線上續約付款（總金額：USD 28,500）。",link:"http://oracle-renewal-tw.com/pay",explanation:"⚠️ 風險指標：\n1. Oracle 授權由公司 IT 與原廠業務洽談，不會透過個人 Email 要求線上付款。\n2. 網域 oracle-renewal-tw.com 為偽造。\n3. 要求點擊連結進行大額付款，為財務詐騙手法。"},
+{id:8,type:"normal",senderName:"資訊處 (IT)",senderEmail:"it-training@yfy.com",subject:"Oracle ERP 電子差旅費申請新功能說明會",body:"同仁好，\n\n因應 2025 年差旅費電子化政策，資訊處將舉辦線上說明會：\n\n時間：2025/04/23（三）14:00\n平台：Microsoft Teams\n內容：電子差旅費申請新流程操作示範\n\nTeams 會議連結請至內部行事曆查詢。",link:"http://portal.yfy.com/calendar/20250423",explanation:"✅ 安全特徵：\n1. 內部教育訓練通知，來自 @yfy.com。\n2. 引導至公司內部行事曆，非直接點擊外部連結。\n3. 符合公司數位化推動方向。"},
+{id:9,type:"phishing",senderName:"ERP System Alert",senderEmail:"alert@erp-system-yfy.org",subject:"Oracle ERP 系統異常：您的帳號被偵測到批量資料匯出",body:"系統安全監控偵測到您的帳號於今日批量匯出大量敏感財務資料。\n\n依據《個人資料保護法》，我們需要您立即說明，請填寫附件表單回傳。",link:"attachment: Incident_Report_Form.docm",explanation:"⚠️ 風險指標：\n1. 偽造 ERP 系統警告，網域 erp-system-yfy.org 非公司網域。\n2. 附件為 .docm（含 VBA 巨集），執行後將植入惡意程式。\n3. 以法律責任製造恐懼迫使快速行動。"},
+{id:10,type:"normal",senderName:"系統管理員",senderEmail:"sysadmin@yfy.com",subject:"Oracle ERP 庫存查詢權限核准通知",body:"您申請的「成品庫存查詢」模組權限已核准。\n\n生效日期：即日起\n申請編號：ACC-2025-0789\n\n請重新登入 ERP 系統以更新權限。\n系統連結：http://erp.yfy.com",link:"http://erp.yfy.com",explanation:"✅ 安全特徵：\n1. 來自公司系統管理員官方信箱（@yfy.com）。\n2. 連結正確指向內部 ERP 網址。\n3. 有申請編號可供查詢核實。"},
+{id:11,type:"phishing",senderName:"Microsoft Teams",senderEmail:"no-reply@teams-notification-tw.com",subject:"您有一則 Teams 未讀訊息需要立即處理",body:"您的 Microsoft Teams 帳號有一則來自 IT 部門的重要訊息尚未讀取。\n\n內容涉及您的帳號異常，IT 工程師需要您的協助進行驗證。\n\n請點擊以下連結登入查看訊息。",link:"http://teams-yfy-login.com/verify",explanation:"⚠️ 風險指標：\n1. 網域 teams-notification-tw.com 非微軟官方（官方為 microsoft.com）。\n2. Teams 通知不會要求點擊外部連結登入。\n3. 以「IT 通知」製造信任感誘騙登入。"},
+{id:12,type:"normal",senderName:"採購部",senderEmail:"purchase@yfy.com",subject:"Oracle iProcurement 2025年Q2 請購流程調整說明",body:"各位同仁，\n\n配合 2025年Q2 採購政策調整：\n• 單筆超過 15 萬元請購單需加會財務部複核\n• 境外採購需附詢價比較表\n\n詳細操作手冊請見附件 PDF，系統操作有疑問請洽 IT 資訊處。",link:"attachment: ERP_Purchase_Guide_Q2_2025.pdf",explanation:"✅ 安全特徵：\n1. 來自採購部官方信箱（@yfy.com）。\n2. 附件為 PDF 說明文件，無外部連結。\n3. 政策調整符合公司正常公告形式。"},
+{id:13,type:"phishing",senderName:"勞動部-勞保局",senderEmail:"labor@labor-insurance-tw-refund.com",subject:"【重要通知】2025年勞保費率調整－您有溢繳保費待退還",body:"依據 2025 年勞保費率由 12% 調升為 12.5% 之新制，系統核算後發現貴公司有勞保費溢繳金額共計 NT$8,620 元。\n\n請點擊下方連結，填寫公司帳戶資料以利退費撥款。",link:"http://labor-refund-apply.com/2025",explanation:"⚠️ 風險指標：\n1. 利用 2025 年真實的勞保費率調整（12%→12.5%）製造可信度。\n2. 網域非政府機關（政府應為 .gov.tw），為偽造詐騙網站。\n3. 政府退費不會透過 Email 要求填寫帳戶資料。"},
+{id:14,type:"normal",senderName:"人資部",senderEmail:"hr@yfy.com",subject:"2025年勞健保投保級距調整通知",body:"各位同仁，\n\n依勞動部規定，2025年1月1日起：\n• 基本工資月薪調整為 28,590 元\n• 勞保費率調升為 12.5%\n\n本公司已於 1/1 完成級距調整，如薪資有異動請洽人資部確認投保級距。\n\n詳細說明請見附件。",link:"attachment: 2025_insurance_update.pdf",explanation:"✅ 安全特徵：\n1. 來自公司人資部官方信箱（@yfy.com）。\n2. 內容符合 2025 年真實新制，提供正確資訊。\n3. 附件為說明 PDF，無索取個資。"},
+{id:15,type:"phishing",senderName:"國稅局電子申報",senderEmail:"etax@etax-gov-tw-refund.com",subject:"【退稅通知】114年度營利事業所得稅暫繳退稅",body:"依稅務申報系統核算，貴公司114年度營所稅暫繳稅額有溢繳，退稅金額：NT$42,000。\n\n請點擊連結填寫公司收款帳戶資料，以完成退稅撥款作業。\n\n逾期未申請視同放棄。",link:"http://etax-refund-apply-114.com",explanation:"⚠️ 風險指標：\n1. 政府退稅不會以 Email 要求填寫帳戶，應透過財政部電子申報系統。\n2. 網域非 .gov.tw，為偽造。\n3. 「逾期視同放棄」為製造急迫感的詐騙手法。"},
+{id:16,type:"normal",senderName:"會計室",senderEmail:"accounting@yfy.com",subject:"114年度營利事業所得稅暫繳申報提醒",body:"各部門主管，\n\n114年度（2025年）營利事業所得稅暫繳申報期限為 9/1~9/30。\n\n請各部門提供所需費用憑證至會計室，逾期恕無法納入本期申報。\n\n財政部電子申報官方連結：https://www.etax.nat.gov.tw",link:"https://www.etax.nat.gov.tw",explanation:"✅ 安全特徵：\n1. 來自公司會計室官方信箱（@yfy.com）。\n2. 連結為財政部官方網站（.gov.tw）。\n3. 正常的稅務提醒公告格式。"},
+{id:17,type:"phishing",senderName:"美國貿易辦事處",senderEmail:"tariff@us-tariff-notify-2025.com",subject:"【緊急】美國對台關稅調整－貴公司出口貨物需補繳關稅差額",body:"因應 2025 年美國對台貿易關稅政策調整，貴公司出口美國貨物尚有關稅差額 USD 12,400 未繳清。\n\n請於 3 個工作天內完成補繳，否則後續出口貨物將遭海關扣留。\n\n補繳連結：http://us-tariff-pay.com/tw-2025",link:"http://us-tariff-pay.com/tw-2025",explanation:"⚠️ 風險指標：\n1. 利用 2025 年美國對台關稅調整時事製造可信度。\n2. 美國海關不會以 Email 要求個別企業點連結補繳，應透過正式報關行或政府公文。\n3. 網域完全偽造，為詐騙財務轉帳。"},
+{id:18,type:"normal",senderName:"關務署-基隆關",senderEmail:"no-reply@customs.mof.gov.tw",subject:"進口報單申報確認通知 C3 查驗",body:"您好，\n\n進口報單號碼：BD/25/B123/0045 已完成 C3 文件審查，請通知報關行備妥相關文件至查驗區。\n\n如有疑問請洽本關服務電話：(02)2425-6600\n\n財政部關務署基隆關",link:"https://web.customs.mof.gov.tw",explanation:"✅ 安全特徵：\n1. 來自政府官方信箱（@customs.mof.gov.tw）。\n2. 連結為政府官方網站。\n3. 有具體報單號碼及官方聯絡電話可供查證。"},
+{id:19,type:"phishing",senderName:"CEO 劉董事長",senderEmail:"ceo.yfy.private@gmail.com",subject:"緊急機密：海外廠房投資案保證金",body:"小陳，\n\n我現在人在越南談一個重要廠房投資案，對方要求今天先匯保證金 USD 35,000 才能確保合約。\n\n這件事先不要告訴其他人，你幫我先安排匯款，附件是對方匯款資訊。\n\n此案非常重要，麻煩配合。",link:"attachment: Wire_Transfer.pdf",explanation:"⚠️ 風險指標（CEO 詐騙）：\n1. 自稱董事長卻使用 Gmail 外部信箱，公司高層應使用 @yfy.com。\n2. 「不要告訴其他人」是繞過財務內控的典型 BEC 手法。\n3. 任何匯款需求都必須走正式簽核流程，不能只憑 Email 指示。"},
+{id:20,type:"normal",senderName:"薪資管理組",senderEmail:"payroll@yfy.com",subject:"2025年4月薪資單已上傳",body:"同仁好，\n\n2025年4月薪資單已上傳至員工自助服務入口網站。\n\n提醒事項：\n• 本月已包含 2025/1/1 基本工資調整後差額補發\n• 如薪資有疑問，請洽人資部分機 888\n\n查詢連結：http://portal.yfy.com/hr/payslip",link:"http://portal.yfy.com/hr/payslip",explanation:"✅ 安全特徵：\n1. 來自公司薪資管理組官方信箱（@yfy.com）。\n2. 連結指向公司內部入口網站。\n3. 提供內部分機查詢，無索取個資。"},
+{id:21,type:"phishing",senderName:"台電公司客服",senderEmail:"service@taipower-bill-2025.com",subject:"台電10月電費帳單逾期通知－避免斷電請立即繳費",body:"您好，\n\n依據 2025年10月電費調漲方案，您廠區的電費帳單金額已調整為 NT$486,200。\n\n帳單已逾期 3 天，為避免供電中斷，請立即點擊連結線上繳費。",link:"http://taipower-payment-tw.com/pay",explanation:"⚠️ 風險指標：\n1. 利用 2025年10月台電電費調漲的真實政策製造可信度。\n2. 網域 taipower-bill-2025.com 為偽造（台電官方為 taipower.com.tw）。\n3. 以「斷電威脅」製造恐懼迫使快速付款。"},
+{id:22,type:"normal",senderName:"出納組",senderEmail:"cashier@yfy.com",subject:"2025年4月廠商貨款匯出作業通知",body:"致採購窗口，\n\n今日（2025/04/15）已完成本週廠商貨款定期匯出。\n匯款廠商清單及金額明細如附件 Excel，請轉知各廠商確認入帳。\n\n如有疑問請洽出納組分機 215。",link:"attachment: 20250415_payment_list.xlsx",explanation:"✅ 安全特徵：\n1. 來自公司出納組官方信箱（@yfy.com）。\n2. 附件為正常的 Excel 付款明細，非可執行檔。\n3. 有內部分機可供查詢，符合正常財務作業程序。"},
+{id:23,type:"phishing",senderName:"健保署補助通知",senderEmail:"nhia@nhia-tw-subsidy-2025.com",subject:"【114年新制】30歲成人健康檢查費用補助申請",body:"配合 2025 年新制，30 歲以上民眾可申請政府健檢補助 NT$1,200 元。\n\n申請截止日：2025/04/30\n\n請點擊連結填寫姓名、身分證字號及銀行帳號，完成補助申請。",link:"http://nhia-subsidy-apply.com/2025",explanation:"⚠️ 風險指標：\n1. 利用 2025 年真實新制（30歲免費健檢政策）吸引點擊。\n2. 網域非政府機關（應為 .gov.tw），為偽造詐騙網站。\n3. 政府補助不會透過 Email 要求填寫身分證及銀行帳號。"},
+{id:24,type:"normal",senderName:"財務長室",senderEmail:"cfo-office@yfy.com",subject:"2025年上半年預算執行率檢討會議",body:"各部門主管，\n\n2025年上半年預算執行率檢討會議訂於 05/15（四）14:00 舉行。\n\n請各部門提前準備：\n• Q1~Q2 實際支出 vs. 預算對照表\n• 下半年預算調整需求說明\n\n會議議程請見附件。",link:"attachment: Budget_Review_2025H1_agenda.pdf",explanation:"✅ 安全特徵：\n1. 來自財務長室官方信箱（@yfy.com）。\n2. 附件為 PDF 議程，無異常連結。\n3. 符合一般企業財務檢討會議的正常安排。"},
+{id:25,type:"phishing",senderName:"原料供應商-永鑫",senderEmail:"raw-material@yongxin-supplier.com",subject:"RE: 訂單 #YFY2025-0412 原料漲價及帳戶變更通知",body:"感謝長期合作，\n\n受美國關稅政策影響，2025 Q2 原料進貨成本上漲約 18%，本公司被迫調漲供貨價格。\n\n同時通知：本公司收款銀行帳戶已變更，舊帳戶將於本月底停用，請將後續貨款匯至以下新帳戶：\n銀行：玉山銀行\n帳號：0860-940-xxxxxx",link:"attachment: 2025Q2_Price_Adjustment.pdf",explanation:"⚠️ 風險指標（BEC 變臉詐騙）：\n1. 利用 2025 年美國關稅衝擊台灣供應鏈的時事增加可信度。\n2. 要求「變更匯款帳戶」是最高風險 BEC 警訊，必須電話向原廠商窗口查證。\n3. 任何帳戶變更都需透過已知聯絡方式（電話）二次確認。"},
+{id:26,type:"phishing",senderName:"Claude AI Enterprise",senderEmail:"enterprise@claude-ai-yfy-login.com",subject:"您的 Claude AI 企業帳號驗證通知",body:"YFY Group 的 Claude AI 企業授權已啟用。\n\n為完成帳號綁定，請使用公司 SSO 登入並驗證您的帳號。\n\n點擊連結完成設定：http://claude-ai-yfy-verify.com/sso",link:"http://claude-ai-yfy-verify.com/sso",explanation:"⚠️ 風險指標：\n1. Anthropic/Claude 官方 SSO 登入網址應為 claude.ai，透過公司 IT 通知，非外部信件。\n2. 網域 claude-ai-yfy-login.com 為偽造釣魚網站。\n3. 收到 AI 工具帳號通知，應向資訊處確認，勿直接點擊外部連結。"},
+{id:27,type:"normal",senderName:"資訊處 (IT)",senderEmail:"it-service@yfy.com",subject:"Claude AI 企業版 SSO 登入操作說明",body:"各位同仁，\n\n公司已完成 Claude AI 企業版 SSO 整合，即日起可使用公司帳號登入。\n\n登入方式：\n1. 開啟 https://claude.ai\n2. 點選「Continue with SSO」\n3. 輸入 YFY\\您的帳號（例如：YFY\\john.doe）\n\n操作說明請見內網知識庫，有問題請洽 IT 分機 888。",link:"http://portal.yfy.com/it/claude-guide",explanation:"✅ 安全特徵：\n1. 來自公司 IT 官方信箱（@yfy.com）。\n2. 引導至 claude.ai 官網及公司內部知識庫。\n3. SSO 登入格式（YFY\\帳號）符合企業 AD 標準。"},
+{id:28,type:"phishing",senderName:"Microsoft Copilot",senderEmail:"copilot@microsoft-copilot-tw-activate.com",subject:"Microsoft 365 Copilot 企業授權啟用通知",body:"您的公司 Microsoft 365 Copilot 授權已準備就緒。\n\n請於 3 天內完成啟用，否則授權將自動收回，您將無法使用 AI 功能。\n\n立即啟用：http://m365-copilot-activate.com/tw",link:"http://m365-copilot-activate.com/tw",explanation:"⚠️ 風險指標：\n1. Microsoft 官方通知應透過 Microsoft 365 管理中心，非個人 Email 連結。\n2. 網域 microsoft-copilot-tw-activate.com 為偽造，官方為 microsoft.com。\n3. 以「3天內啟用否則收回」製造急迫感誘騙點擊。"},
+{id:29,type:"normal",senderName:"資安推動小組",senderEmail:"infosec@yfy.com",subject:"【宣導】公務電腦禁止使用未核可 AI 工具",body:"各位同仁，\n\n因應 AI 工具普及帶來的資料外洩風險，即日起公務電腦禁止使用未經 IT 核可的 AI 工具（含個人版 ChatGPT、未授權 Copilot 等）。\n\n已核可工具清單及使用規範請見附件，違反者依公司資安政策處理。",link:"attachment: Approved_AI_Tools_Policy_2025.pdf",explanation:"✅ 安全特徵：\n1. 來自公司資安推動小組官方信箱（@yfy.com）。\n2. 附件為 PDF 政策文件，符合公司宣導格式。\n3. 符合 2025 年企業普遍實施的 AI 使用管控趨勢。"},
+{id:30,type:"phishing",senderName:"IT Security Center",senderEmail:"security@yfy-security-alert.net",subject:"【高風險警告】偵測到您的帳號遭 AI 語音攻擊嘗試",body:"我們的 AI 威脅偵測系統於 2025/04/14 22:31 發現您的帳號有異常登入嘗試，攻擊者使用 Deepfake 語音偽裝。\n\n請立即點擊下方連結重置密碼並啟用 MFA，否則帳號將於 30 分鐘後強制鎖定。",link:"http://yfy-account-reset.net/emergency",explanation:"⚠️ 風險指標：\n1. 利用 2025 年 AI Deepfake 攻擊的熱門議題製造恐慌。\n2. 網域 yfy-security-alert.net 為偽造（非 @yfy.com）。\n3. 以「30分鐘強制鎖定」製造極端急迫感，是典型社交工程手法。"},
+{id:31,type:"normal",senderName:"資訊處 (IT)",senderEmail:"it-service@yfy.com",subject:"【重要】MFA 多因子驗證全面啟用通知",body:"各位同仁，\n\n配合 2025 年公司資安強化計畫，自 2025/05/01 起：\n• VPN 登入需搭配 Microsoft Authenticator 手機驗證\n• 系統登入連續失敗 5 次將自動鎖定帳號\n\n請於 04/30 前完成 Authenticator 設定。\n操作手冊：http://portal.yfy.com/it/mfa-setup-2025",link:"http://portal.yfy.com/it/mfa-setup-2025",explanation:"✅ 安全特徵：\n1. 來自公司 IT 官方信箱（@yfy.com）。\n2. 連結指向公司內部 Portal。\n3. 提前告知並給予充裕設定時間，符合正常 IT 政策推動方式。"},
+{id:32,type:"phishing",senderName:"廠商-信義機械",senderEmail:"shinyi.machinery.tw@gmail.com",subject:"RE: 空壓機年度保養報價單 RFQ-2025-022",body:"感謝貴公司詢價，\n\n附件為我司針對新屋廠空壓機年度保養的詳細報價單及服務合約草稿，請審閱後回覆確認。\n\n如有問題請回信聯絡，謝謝。",link:"attachment: Quotation_Compressor_2025.zip",explanation:"⚠️ 風險指標：\n1. 正規廠商應使用公司網域信箱，使用 gmail.com 需高度警惕。\n2. 附件為 .zip 壓縮檔，勒索軟體常見傳播方式。\n3. 正確做法：電話確認廠商確實有回覆，再透過公司防毒掃描後開啟。"},
+{id:33,type:"normal",senderName:"採購部",senderEmail:"purchase@yfy.com",subject:"空壓機年度保養廠商評選結果通知",body:"相關同仁，\n\nRFQ-2025-022 空壓機保養廠商評選已完成，決標廠商為：\n\n台灣氣動服務股份有限公司\n得標金額：NT$342,000\n\n請工務部協調廠商安排進廠時間，採購合約由法務室協助簽署。",link:"http://srm.yfy.com/rfq/2025-022",explanation:"✅ 安全特徵：\n1. 來自採購部官方信箱（@yfy.com）。\n2. 連結指向公司內部供應商管理系統（srm.yfy.com）。\n3. 有具體廠商名稱、金額及後續流程，符合採購標準作業。"},
+{id:34,type:"phishing",senderName:"FedEx Taiwan",senderEmail:"tracking@fedex-tw-delivery.net",subject:"您的進口貨物包裹清關通知－需補交稅金",body:"您有一批進口貨物（Tracking: 7743829810012）已到達桃園機場。\n\n海關審查發現需補交關稅及處理費共計 NT$2,380，請於 24 小時內完成繳費，否則貨物將被退運。\n\n立即繳費：http://fedex-tw-customs-pay.com",link:"http://fedex-tw-customs-pay.com",explanation:"⚠️ 風險指標：\n1. 物流費用詐騙 2025 年常見手法。\n2. 網域 fedex-tw-delivery.net 為偽造（FedEx 官方為 fedex.com/zh-tw）。\n3. 關稅由報關行代為處理，不會透過個人 Email 要求小額線上付款。"},
+{id:35,type:"normal",senderName:"法務室",senderEmail:"legal@yfy.com",subject:"2025 年供應商合約新增 AI 使用及帳戶變更條款說明",body:"各採購窗口，\n\n因應 2025 年 AI 工具普及，公司已更新供應商合約範本，新增：\n• 禁止供應商將公司機密資料輸入未核可 AI 工具\n• 供應商資料安全責任條款\n• 帳戶變更需雙方簽署補充協議\n\n更新版合約範本已上傳至內網。",link:"http://portal.yfy.com/legal/contract-template-2025",explanation:"✅ 安全特徵：\n1. 來自法務室官方信箱（@yfy.com）。\n2. 連結指向公司內部 Portal。\n3. 新增「帳戶變更確認程序」條款，符合防範 BEC 的最佳實務做法。"},
+{id:36,type:"phishing",senderName:"IT 管理員-陳工",senderEmail:"it.admin.chen@gmail.com",subject:"您的 VPN 連線有問題，需要您配合重新設定",body:"同仁您好，\n\n我是資訊處陳工，注意到您的 VPN 帳號連線不穩定。\n\n麻煩您今天下班前回信提供：\n1. 您目前的 VPN 帳號\n2. 上次成功登入的時間\n3. 您使用的裝置名稱\n\n方便的話可以加我的 LINE：it_chen_yfy 直接溝通。",link:"",explanation:"⚠️ 風險指標：\n1. 正式 IT 人員使用 @yfy.com 信箱，不會用個人 Gmail。\n2. IT 工程師不需要透過 Email 索取 VPN 帳號等敏感資訊。\n3. 要求加個人 LINE 是將溝通轉移到公司監控之外的社交工程手法。"},
+{id:37,type:"normal",senderName:"資訊處 (IT)",senderEmail:"it-service@yfy.com",subject:"VPN 系統升級通知及新版 Client 下載說明",body:"各位同仁，\n\n公司 VPN 系統將於 2025/04/20 完成升級，升級後需更新 VPN Client。\n\n請於 04/21 後至公司 IT 軟體下載頁面更新：\nhttp://portal.yfy.com/it/vpn-client-v5\n\n升級步驟請見附件說明，有問題請撥分機 888 洽 IT Help Desk。",link:"http://portal.yfy.com/it/vpn-client-v5",explanation:"✅ 安全特徵：\n1. 來自 IT 官方信箱（@yfy.com），有具體分機號碼。\n2. 下載連結為公司內部 Portal，非外部網站。\n3. 提前通知並給予充裕更新時間，符合正常 IT 作業。"},
+{id:38,type:"phishing",senderName:"AI 使用習慣調查",senderEmail:"research@ai-survey-tw-2025.com",subject:"邀請參與企業 AI 使用習慣研究調查（有報酬）",body:"您好，\n\n我們正在進行台灣企業 AI 工具使用習慣研究，受邀參與的企業員工可獲得 NT$500 全聯禮品卡。\n\n調查約 5 分鐘，請點擊連結填寫，需填寫姓名、公司名稱及公司 Email 完成驗證。",link:"http://ai-survey-tw-2025.com/fill",explanation:"⚠️ 風險指標：\n1. 網域非 anthropic.com，為偽造詐騙網站。\n2. 索取姓名、公司名稱、公司 Email 是典型的個資蒐集詐騙。\n3. 以禮品卡誘惑（Baiting 攻擊），為常見社交工程手法。"},
+{id:39,type:"normal",senderName:"資安推動小組",senderEmail:"infosec@yfy.com",subject:"2025 Q1 社交工程演練成果公告",body:"各位同仁，\n\n2025年Q1 社交工程演練結果如下：\n• 演練信件發送：3,012 封\n• 點擊率：8.3%（較去年同期下降 4.2%）\n• 完成後續教育訓練比率：72%\n\n感謝各位配合，將持續強化資安意識訓練。\n詳細報告：http://portal.yfy.com/security/drill-report-2025Q1",link:"http://portal.yfy.com/security/drill-report-2025Q1",explanation:"✅ 安全特徵：\n1. 來自資安推動小組官方信箱（@yfy.com）。\n2. 有具體數據，連結指向公司內部 Portal。\n3. 符合公司定期辦理社交工程演練並公告結果的正常程序。"},
+{id:40,type:"phishing",senderName:"行政院人事行政總處",senderEmail:"personnel@gov-personnel-tw.com",subject:"【公告】114年軍公教調薪 3% 補發款項確認",body:"依行政院公告，114年（2025年）軍公教人員調薪 3% 已核定。\n\n若貴公司員工有政府機關兼職身份，請點擊連結確認補發款項匯入帳戶資料。",link:"http://gov-pay-confirm-2025.com/apply",explanation:"⚠️ 風險指標：\n1. 利用 2025 年真實軍公教調薪 3% 政策吸引點擊。\n2. 網域 gov-personnel-tw.com 非政府機關（政府為 .gov.tw）。\n3. 政府薪資補發透過原服務機關辦理，不會以 Email 要求個別確認帳戶。"},
+{id:41,type:"phishing",senderName:"美國原料供應商 PaperSource",senderEmail:"sales@papersource-intl-tw.net",subject:"2025 Q2 廢紙原料報價調整暨匯款帳戶變更通知",body:"YFY 採購部 您好，\n\n受美國 2025 年對中關稅政策影響，Q2 廢紙原料（OCC 級）價格調整為 USD 185/MT（上漲 12%）。\n\n同時通知：本公司美元收款帳戶已更換至新銀行，請將後續貨款改匯：\nBank: JP Morgan Chase\nACC: 7823-xxxxx\nSwift: CHASUS33",link:"attachment: 2025Q2_Price_Rate.pdf",explanation:"⚠️ 風險指標（供應鏈 BEC）：\n1. 利用 2025 年美國關稅政策衝擊供應鏈的真實情境增加可信度。\n2. 同時提「漲價」與「帳戶變更」是 BEC 常見組合攻擊。\n3. 必須透過電話聯繫原廠商已知聯絡人核實帳戶變更。"},
+{id:42,type:"normal",senderName:"資材課",senderEmail:"material@yfy.com",subject:"2025 Q2 廢紙進貨計畫及供應商品質評估",body:"採購部 您好，\n\n附件為 2025 Q2 廢紙進貨計畫及主要供應商品質評估報告。\n\n重點事項：\n• OCC 廢紙含水率近期偏高，請採購洽供應商改善\n• 備料庫存預計可支撐至 05/15，請盡速確認Q2 合約\n\n詳細報告請見附件。",link:"attachment: 2025Q2_Material_Plan.xlsx",explanation:"✅ 安全特徵：\n1. 來自公司資材課官方信箱（@yfy.com）。\n2. 附件為 Excel 內部報告，無異常連結。\n3. 內容為正常內部作業討論，未涉及金流變更。"},
+{id:43,type:"phishing",senderName:"SGS Taiwan 品質認證",senderEmail:"certification@sgs-taiwan-cert.com",subject:"貴公司 ISO 45001 認證即將到期，需補件重審",body:"敬啟者，\n\n貴公司 ISO 45001 職業安全衛生管理系統認證將於 2025/06/30 到期。\n\n為辦理續審，請點擊連結繳交審查費用 NT$85,000 並上傳相關文件。",link:"http://sgs-taiwan-renewal.com/pay",explanation:"⚠️ 風險指標：\n1. SGS 官方網域為 sgs.com，sgs-taiwan-cert.com 為偽造。\n2. 認證審查費用應透過 SGS 官方報價及發票辦理，不會在外部網站線上付款。\n3. 認證到期通知需核對公司內部記錄並向 SGS 正式窗口確認。"},
+{id:44,type:"normal",senderName:"採購部",senderEmail:"purchase@yfy.com",subject:"2025年度供應商 ESG 評估問卷發送通知",body:"各供應商窗口，\n\n因應公司 2025 ESG 永續供應鏈政策，今年度供應商評估新增 ESG 環境指標。\n\n問卷連結將由系統透過 srm@yfy.com 發送，請各窗口轉知廠商於 2025/05/31 前完成填寫。\n\n說明文件：http://portal.yfy.com/purchase/esg-supplier-2025",link:"http://portal.yfy.com/purchase/esg-supplier-2025",explanation:"✅ 安全特徵：\n1. 來自採購部官方信箱（@yfy.com）。\n2. 預先告知系統發信來源（srm@yfy.com），讓收件人有預期。\n3. 連結指向公司內部 Portal，符合正常採購作業程序。"},
+{id:45,type:"phishing",senderName:"關貿網路 TradeVan",senderEmail:"report@tradevantw-report.com",subject:"您的 EDI 報關資料異常，請立即確認",body:"貴公司 EDI 報關資料於 2025/04/14 傳輸異常，部分出口報單資料錯誤，可能影響貨物正常通關。\n\n請點擊下方連結登入確認資料，並重新上傳正確文件。",link:"http://tradevantw-verify.com/login",explanation:"⚠️ 風險指標：\n1. 關貿網路官方網域為 tradevan.com.tw，tradevantw-report.com 為偽造。\n2. EDI 異常通知應透過報關行確認，不會直接要求個人登入外部網站。\n3. 以「影響通關」製造急迫感。"},
+{id:46,type:"normal",senderName:"供應商管理系統",senderEmail:"srm@yfy.com",subject:"供應商台灣化學股份有限公司合約續約提醒",body:"系統提醒：\n\n供應商：台灣化學股份有限公司\n合約類型：化工原料供應\n到期日：2025/06/30（距今 76 天）\n\n請採購人員評估是否續約並更新 SRM 系統中的合約資訊。\n\n合約查詢：http://srm.yfy.com/contracts/TC-2023-089",link:"http://srm.yfy.com/contracts/TC-2023-089",explanation:"✅ 安全特徵：\n1. 來自公司 SRM 系統官方信箱（srm@yfy.com）。\n2. 連結指向公司內部供應商管理系統。\n3. 有具體合約編號、廠商名稱、到期日，符合系統自動提醒格式。"},
+{id:47,type:"phishing",senderName:"Maersk Taiwan",senderEmail:"notice@maersk-shipping-tw.net",subject:"您的貨櫃 MRKU4421987 已到港，需補交燃油附加費",body:"您的貨物已於 2025/04/13 抵達基隆港。\n\n因 2025 年國際航運費率調整，需額外收取 USD 380 燃油附加費（BAF）才可放行。\n\n請點擊連結完成線上繳費，否則每日收取 USD 50 滯港費。",link:"http://maersk-tw-payment.com/pay",explanation:"⚠️ 風險指標：\n1. Maersk 官方網域為 maersk.com，maersk-shipping-tw.net 為偽造。\n2. 物流費用詐騙常以「附加費」「滯港費」名義索取款項騙取信用卡資訊。\n3. 任何費用應透過公司報關行確認，勿直接點擊連結付款。"},
+{id:48,type:"normal",senderName:"法務室",senderEmail:"legal@yfy.com",subject:"採購合約 ESG 及資安條款更新說明 v2025",body:"各採購及法務窗口，\n\n2025 年版採購合約範本已完成更新，主要新增：\n1. 供應商 ESG 承諾條款（碳排放揭露）\n2. 供應商資訊安全責任條款（禁止 AI 工具處理公司機密資料）\n3. 帳戶變更確認程序（需雙方簽署補充協議）\n\n新版範本已上傳至內部 Portal。",link:"http://portal.yfy.com/legal/contract-v2025",explanation:"✅ 安全特徵：\n1. 來自法務室官方信箱（@yfy.com）。\n2. 連結指向公司內部 Portal。\n3. 新增「帳戶變更確認程序」條款，符合防範 BEC 的最佳實務做法。"},
+{id:49,type:"phishing",senderName:"台泥-陳業務",senderEmail:"chen.sales.tcc@gmail.com",subject:"RE: 水泥採購詢價 2025 Q3 報價",body:"永豐餘採購 您好，\n\n感謝詢價，附件為 2025Q3 水泥報價單，因原料成本上漲，本次報價較去年調漲約 8%，請參考。\n\n此外，因公司財務系統更換，請注意我們的收款帳號已更新，詳見報價單最後一頁。",link:"attachment: TCC_Q3_2025_Quote.xlsx",explanation:"⚠️ 風險指標：\n1. 正規大廠（台泥）業務應使用公司信箱（@tcc.com.tw），使用 Gmail 是重大警訊。\n2. 報價單內夾帶「帳號變更」通知，是典型 BEC 手法。\n3. 任何廠商帳號變更必須電話向已知窗口確認，不能僅憑文件更改付款資訊。"},
+{id:50,type:"normal",senderName:"總務課",senderEmail:"general-affairs@yfy.com",subject:"2025年Q2 辦公用品請購截止通知",body:"同仁好，\n\n2025年Q2 辦公用品集中請購截止日為 2025/04/25（五）。\n\n有文具、紙張、耗材需求的部門，請於截止前在 ERP 系統填寫請購單。\n\n請購單連結：http://erp.yfy.com/ga/request\n如有特殊採購需求請提前聯繫總務課分機 106。",link:"http://erp.yfy.com/ga/request",explanation:"✅ 安全特徵：\n1. 來自總務課官方信箱（@yfy.com）。\n2. 連結指向公司內部 ERP，有具體分機號碼。\n3. 符合每季辦公用品集中採購的正常作業。"},
+{id:51,type:"phishing",senderName:"工業局補助計畫",senderEmail:"subsidy@moeaidb-grant-2025.com",subject:"2025 年製造業數位轉型補助 NT$50萬 申請通知",body:"貴公司符合 2025 年經濟部工業局「製造業數位轉型補助計畫」申請資格。\n\n補助金額上限：NT$500,000\n申請截止：2025/04/30\n\n請點擊連結填寫申請資料（需提供公司統編、負責人資料及銀行帳號）。",link:"http://moeaidb-subsidy-apply.com/2025",explanation:"⚠️ 風險指標：\n1. 利用政府補助計畫吸引企業點擊，是近年常見詐騙手法。\n2. 網域 moeaidb-grant-2025.com 非政府機關（政府為 .gov.tw）。\n3. 正式補助申請透過工業局官方網站辦理，不會直接寄信要求填寫帳戶資料。"},
+{id:52,type:"normal",senderName:"人資部",senderEmail:"hr@yfy.com",subject:"2025 年新進人員資安教育訓練課程通知",body:"新進同仁您好，\n\n請於到職後 2 週內完成以下線上資安課程：\n1. 社交工程識別（必修）\n2. 個人資料保護法（必修）\n3. 公司資訊安全政策（必修）\n\n課程平台：http://elearning.yfy.com\n完成後請截圖回傳人資部備查。",link:"http://elearning.yfy.com",explanation:"✅ 安全特徵：\n1. 來自人資部官方信箱（@yfy.com）。\n2. 連結指向公司內部 eLearning 平台。\n3. 明確說明課程要求及完成後的回報程序，符合正常人資作業。"},
+{id:53,type:"phishing",senderName:"廖副總",senderEmail:"liao.vp.yfy@gmail.com",subject:"急事：需要你幫我辦一件事",body:"小王，\n\n我現在在跟台積電的高層開會，不方便打電話。\n\n幫我去買 15 張 Apple Gift Card（每張 NT$2,000），把序號照相傳給我，公司週年慶送客戶用的。\n\n回公司我再幫你簽核報帳，要快，謝謝。",link:"",explanation:"⚠️ 風險指標（禮品卡詐騙 BEC）：\n1. 公司副總使用 Gmail 而非 @yfy.com 是重大警訊。\n2. 要求購買「禮品卡/序號」是 BEC 詐騙中永遠無法追回資金的手法。\n3. 以「不方便接電話」阻止受害者電話查證，是 BEC 必要元素。\n4. 正確做法：直接撥打副總辦公室分機確認。"},
+{id:54,type:"phishing",senderName:"財務長 CFO",senderEmail:"cfo.yfy.tw@protonmail.com",subject:"Re: Re: 機密－越南廠區土地收購保證金",body:"請問進度如何？\n\n對方律師說今天下午 5 點前保證金 USD 80,000 必須到帳，否則地主另售他人。\n\n此案是董事會機密，請勿在公司系統或 Teams 上討論，直接回信給我即可。\n\n請確認匯款能今天完成。",link:"",explanation:"⚠️ 風險指標（CEO/CFO 詐騙）：\n1. 財務長使用 ProtonMail 加密信箱，而非 @yfy.com，是高度警訊。\n2. 「請勿在公司系統上討論」是要求繞過公司監控和財務內控。\n3. 以時間限制（今天下午5點）製造急迫感。\n4. 任何重大匯款必須走正式簽核程序。"},
+{id:55,type:"phishing",senderName:"台積電採購-林經理",senderEmail:"tsmc.purchase.lin@yahoo.com.tw",subject:"關於 YFY 紙箱供貨品質問題急需討論",body:"您好，\n\n我是台積電包材採購部林經理，近期貴公司供貨的防靜電包裝紙箱有數批品質問題，已影響產線。\n\n情況緊急，能否提供負責業務的手機號碼，我直接電話聯繫？",link:"",explanation:"⚠️ 風險指標：\n1. 台積電正式採購人員使用公司信箱（@tsmc.com），使用 Yahoo 信箱需高度懷疑。\n2. 索取「手機號碼」是個資蒐集及後續 Vishing（語音釣魚）前置作業。\n3. 正確做法：向業務確認台積電是否有此聯絡，透過已知台積電窗口確認。"},
+{id:56,type:"phishing",senderName:"人資部-黃主任",senderEmail:"hr.huang.yfy@hotmail.com",subject:"關於您的 2025 年薪資調整方案確認",body:"您好，\n\n依據 2025 年公司薪資調整方案，您的薪資已獲得調整。\n\n因涉及個人薪資隱私，詳情無法透過公司系統發送。請加我個人 LINE ID：hr_huang_2025 確認您的調整幅度。\n\n請勿向其他同事透露。",link:"",explanation:"⚠️ 風險指標：\n1. 人資主任使用 Hotmail 外部信箱，不符合公司規定。\n2. 「無法透過公司系統發送」是試圖將溝通轉移到公司監控之外。\n3. 要求加個人 LINE 及「請勿透露他人」，是典型社交工程孤立手法。\n4. 薪資調整通知應透過 ERP/HR 系統正式發送。"},
+{id:57,type:"phishing",senderName:"外部稽核師-王博士",senderEmail:"auditor.wang@accountant-service.com",subject:"114年度公司治理稽核抽查通知",body:"永豐餘集團 財務部門，\n\n本所受委託執行 114 年度公司治理外部稽核，依稽核計畫對貴部門進行抽查。\n\n請提供以下資料並直接回信：\n1. 2024 年 10-12 月所有超過 50 萬元的匯款紀錄\n2. 主要供應商匯款帳號清單\n3. 授權簽核人員名單",link:"",explanation:"⚠️ 風險指標：\n1. 外部稽核應透過正式公文，由公司高層知曉後統一安排，不會直接寄信要求員工回傳機敏資料。\n2. accountant-service.com 非具名會計師事務所的正式網域。\n3. 索取的資料（匯款帳號清單、授權人員名單）可用於後續 BEC 攻擊。"},
+{id:58,type:"phishing",senderName:"供應商-陳總",senderEmail:"supplier.chen@163.com",subject:"關於 2025 Q2 合約續簽及帳戶確認",body:"永豐餘採購您好，\n\n我們 Q2 合約即將到期，希望能繼續合作。\n\n另外最近公司換銀行，能否方便給我你負責本合約的聯絡人手機及 Email，我們業務要更新客戶資料？",link:"",explanation:"⚠️ 風險指標：\n1. 使用中國 163.com 信箱，對台灣本地供應商而言是異常警訊。\n2. 以「更新客戶資料」名義索取手機及 Email，是個資蒐集行為。\n3. 提供聯絡資訊後，後續可能遭受假冒合法供應商的精準 BEC 攻擊。"},
+{id:59,type:"phishing",senderName:"IT 部門通知",senderEmail:"it-notice-yfy@outlook.com",subject:"您的 Microsoft 365 帳號即將停用，請確認保留",body:"同仁您好，\n\n因公司 Microsoft 365 授權清查，未在期限內確認的帳號將停用。\n\n請回信提供：\n1. 您的帳號（Employee ID）\n2. 目前使用的裝置類型\n3. 是否有使用 Teams、OneDrive 等服務\n\n截止時間：今天下班前",link:"",explanation:"⚠️ 風險指標：\n1. 公司 IT 使用 Outlook.com 外部信箱，非 @yfy.com，為偽造。\n2. IT 部門進行帳號清查透過內部系統，不需員工回信提供資訊。\n3. 以「今天下班前截止」製造急迫感。"},
+{id:60,type:"phishing",senderName:"董事長特助-周秘書",senderEmail:"chairman.assistant@gmail.com",subject:"董事長指示：公益捐款急件",body:"您好，\n\n董事長今日參加台灣公益論壇，臨時決定代表公司捐款給花東震災重建基金（董事長指定，非透過公司帳戶）。\n\n請協助先以個人名義購買 20 張 NT$3,000 全聯禮品卡，下午董事長回公司後再報帳。\n\n請保密，避免媒體報導。",link:"",explanation:"⚠️ 風險指標：\n1. 使用 Gmail 而非 @yfy.com，且身份為「特助」難以直接查證。\n2. 要求員工「個人先墊款購買禮品卡」，無論金額大小都不合理。\n3. 「保密」指示是 BEC 常見孤立手法，防止員工查證。"},
+{id:61,type:"phishing",senderName:"海外業務部-張協理",senderEmail:"overseas.sales.chang@aol.com",subject:"緊急：日本客戶 Nippon Paper 匯款帳號變更",body:"財務您好，\n\n日本客戶 Nippon Paper 剛來電，因其銀行帳戶系統升級，請求下個月的貨款改匯至新帳戶，他們說若本週五前確認才能趕上帳期。\n\n請先把原本排定的匯款暫停，我下午就把新帳號資訊傳給你。\n\n（我在飛機上，無法打電話，請直接回信確認收到）",link:"",explanation:"⚠️ 風險指標（攔截式 BEC）：\n1. 海外業務協理使用 AOL 外部信箱，非 @yfy.com。\n2. 「我在飛機上」阻止電話查證，是 BEC 必要元素。\n3. 先要求「暫停匯款」再提供「新帳號」，是攔截現有付款的典型手法。\n4. 任何帳戶變更需重新走財務驗證流程，無論指示來自何人。"},
+{id:62,type:"phishing",senderName:"資訊長 CIO",senderEmail:"cio.yfy.tw@protonmail.com",subject:"關於公司 AI 系統導入的機密評估",body:"您好，\n\n我正在評估一套新的企業 AI 系統（廠商保密協議中），需要您協助測試。\n\n請提供您目前使用的公司帳號及密碼，讓廠商進行 SSO 整合測試，測試完畢後立即更改密碼。\n\n此事屬機密評估，請勿告知其他 IT 同仁。",link:"",explanation:"⚠️ 風險指標：\n1. 任何情況下公司 IT 或管理層都不會索取員工密碼，這是最基本的資安常識。\n2. CIO 使用 ProtonMail 而非 @yfy.com。\n3. 「請勿告知其他 IT 同仁」是高度異常的指示。\n4. SSO 整合測試由 IT 部門統一進行，不需個別員工提供帳密。"},
+{id:63,type:"phishing",senderName:"採購主任-李主任",senderEmail:"purchase.lee@yahoo.com.tw",subject:"急！幫忙購買電子禮品卡送給泰國客戶",body:"阿明，\n\n我現在在客戶廠區陪客戶看廠，臨時要送泰國 MFC 客戶電子禮品卡。\n\n麻煩你幫我在 PChome 買 8 張 Apple iTunes 禮品卡（每張 NT$1,000），把序號截圖傳給我 LINE，我等一下回公司就幫你簽核。\n\nLINE：purchase_lee_yfy（要快，客戶等著）",link:"",explanation:"⚠️ 風險指標：\n1. 主管使用 Yahoo 外部信箱，非 @yfy.com。\n2. 要求購買禮品卡並傳序號，是 BEC 詐騙中永遠無法追回資金的手法。\n3. 以「客戶等著」製造急迫感，要求繞過正常採購程序。"},
+{id:64,type:"phishing",senderName:"永豐餘資安通報",senderEmail:"security-report@yfy-security.org",subject:"您的帳號疑似遭到 AI 語音詐騙攻擊，請立即填報",body:"同仁您好，\n\n根據 2025 年最新威脅情資，有駭客集團使用 AI Deepfake 語音偽裝公司高層，透過電話要求員工匯款。\n\n若您近期接到可疑電話，請點擊下方連結填寫通報表單，資安團隊會立即聯繫您。",link:"http://yfy-security-report.org/phishing-report",explanation:"⚠️ 風險指標：\n1. 網域 yfy-security.org 非公司官方網域（應為 @yfy.com）。\n2. 以「AI Deepfake 威脅」等真實資安議題製造可信度，是高端社交工程手法。\n3. 點擊連結後可能導向釣魚網站竊取帳號。\n4. 公司資安通報應透過官方 IT 信箱（infosec@yfy.com）或內部系統辦理。"},
+{id:65,type:"normal",senderName:"總經理室",senderEmail:"gm-office@yfy.com",subject:"【全員公告】2025年清明連假資安注意事項",body:"各位同仁，\n\n清明連假（4/4~4/6）期間，請注意以下資安事項：\n\n1. 離開座位請鎖定電腦螢幕，休假前關機\n2. 公務資料勿存放個人隨身碟或雲端硬碟\n3. 假期間若收到「緊急匯款」類 Email，一律電話向主管確認後再處理\n4. 識別證妥善保管，勿借他人\n\n祝大家假期愉快，清明連假平安。",link:"",explanation:"✅ 安全特徵：\n1. 來自總經理室官方信箱（@yfy.com）。\n2. 純文字公告，無任何連結或附件。\n3. 第 3 點特別提醒假期間「緊急匯款」詐騙，符合公司正確的資安宣導做法。"}
+];
+const AVS=['av-blue','av-teal','av-green','av-red','av-purple','av-orange','av-amber','av-slate'];
+function avC(n){let h=0;for(let c of n)h=(h<<5)-h+c.charCodeAt(0);return AVS[Math.abs(h)%AVS.length];}
+function ini(n){const p=n.trim().split(' ');return p.length===1?p[0].substring(0,2).toUpperCase():(p[0][0]+p[p.length-1][0]).toUpperCase();}
+function rT(){return`${9+Math.floor(Math.random()*9)}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`;}
+function shuffle(a){const s=[...a];for(let i=s.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[s[i],s[j]]=[s[j],s[i]];}return s;}
+
+let S={sel:null,st:'idle',emails:[],done:[],res:{},ok:0,fail:0,cur:null};
+
+function init(){
+  S={sel:null,st:'idle',emails:shuffle(db).slice(0,10).map(e=>({...e,time:rT()})),done:[],res:{},ok:0,fail:0,cur:null};
+  document.getElementById('final-overlay').style.display='none';
+  document.getElementById('result-overlay').style.display='none';
+  render();
+}
+
+function render(){
+  document.getElementById('score-ok').textContent=S.ok;
+  document.getElementById('score-fail').textContent=S.fail;
+  document.getElementById('score-rem').textContent=S.emails.length-S.done.length;
+  document.getElementById('status-tag').textContent=S.st.toUpperCase();
+  document.getElementById('prog-fill').style.width=(S.done.length/S.emails.length*100)+'%';
+  document.getElementById('sb-counter').textContent=`${S.done.length} / ${S.emails.length} 完成`;
+  document.getElementById('left-num').textContent=S.emails.length-S.done.length;
+  renderList();renderMon();renderRead();
+}
+
+function renderList(){
+  const el=document.getElementById('email-list');el.innerHTML='';
+  S.emails.forEach(e=>{
+    const done=S.done.includes(e.id),sel=S.sel===e.id,ok=S.res[e.id]===true;
+    const d=document.createElement('div');
+    d.className='mail-item'+(sel?' selected':'')+(done&&!sel?' done':'');
+    if(!done||sel) d.onclick=()=>selectEmail(e.id);
+    d.innerHTML=`
+      <div class="mail-av ${avC(e.senderName)}">${ini(e.senderName)}</div>
+      <div class="mail-ct">
+        <div class="mail-r1"><span class="mail-sn">${e.senderName}</span><span class="mail-tm">${e.time}</span></div>
+        <div class="mail-sub">${e.subject}</div>
+        <div class="mail-snip">${e.body.replace(/\n/g,' ')}</div>
+      </div>
+      ${done?`<div class="mail-badge ${ok?'mb-ok':'mb-fail'}">${ok?'✓':'✗'}</div>`:!done?`<div class="unread-dot"></div>`:''}`;
+    el.appendChild(d);
+  });
+}
+
+function renderMon(){
+  const dot=document.getElementById('mon-dot');
+  const tr=document.getElementById('topo-r');
+  const st=document.getElementById('mon-status');
+  tr.classList.remove('gb','gg','gr');dot.classList.remove('live');
+  if(S.st==='transit'){dot.classList.add('live');st.textContent='傳輸中...';}
+  else if(S.st==='arrived'){dot.classList.add('live');tr.classList.add('gb');st.textContent='新郵件已送達，請判斷';}
+  else if(S.st==='resolved'){tr.classList.add(S.cur.success?'gg':'gr');st.textContent=S.cur.success?'✅ 判斷正確':'❌ 判斷錯誤';}
+  else{st.textContent='等待信件...';}
+
+  // Result modal
+  const ro=document.getElementById('result-overlay');
+  if(S.st==='resolved'&&S.cur){
+    ro.style.display='flex';
+    const e=S.emails.find(x=>x.id===S.sel);
+    const ok=S.cur.success;
+    // Big verdict
+    const vi=document.getElementById('v-icon');
+    vi.className='verdict-icon '+(ok?'vi-ok':'vi-fail');
+    vi.innerHTML=ok?`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" style="color:#107c10;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`:`<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" style="color:#a4262c;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
+    const vm=document.getElementById('v-main');vm.className='verdict-main '+(ok?'vt-ok':'vt-fail');vm.textContent=ok?'回答正確！':'回答錯誤';
+    document.getElementById('v-sub').textContent=S.cur.message;
+    const vt=document.getElementById('v-tag');vt.className='verdict-tag '+(ok?'vtag-ok':'vtag-fail');vt.textContent=ok?'✓  CORRECT':'✗  WRONG';
+    // Analysis
+    document.getElementById('dlg-ana').textContent=S.cur.explanation;
+    // Reference
+    document.getElementById('ref-subj').textContent=e.subject;
+    document.getElementById('ref-sender').textContent=e.senderName;
+    document.getElementById('ref-email').textContent=`<${e.senderEmail}>`;
+    document.getElementById('ref-body').textContent=e.body;
+    const rl=document.getElementById('ref-link-box');
+    if(e.link&&e.link!==''){rl.style.display='block';document.getElementById('ref-link-url').textContent=e.link;}else{rl.style.display='none';}
+    document.getElementById('btn-next-lbl').textContent=S.done.length===S.emails.length?'查看成績單 🏆':'下一封郵件';
+  } else {ro.style.display='none';}
+}
+
+function renderRead(){
+  const idle=document.getElementById('panel-idle');
+  const active=document.getElementById('panel-active');
+  const ov=document.getElementById('panel-overlay');
+  if(S.st==='idle'||S.st==='transit'){idle.style.display='flex';active.style.display='none';return;}
+  idle.style.display='none';active.style.display='flex';
+  const e=S.emails.find(x=>x.id===S.sel);if(!e)return;
+  ov.style.display=(S.done.includes(e.id)&&S.st!=='resolved')?'flex':'none';
+  document.getElementById('read-subj').textContent=e.subject;
+  document.getElementById('read-name').textContent=e.senderName;
+  document.getElementById('read-addr').textContent=`<${e.senderEmail}>`;
+  document.getElementById('read-time-txt').textContent=e.time;
+  const av=document.getElementById('read-av');av.className='read-av '+avC(e.senderName);av.textContent=ini(e.senderName);
+  document.getElementById('read-body').textContent=e.body;
+  const ac=document.getElementById('att-card');
+  if(e.link&&e.link!==''){ac.style.display='flex';document.getElementById('att-url').textContent=e.link;}else{ac.style.display='none';}
+  const dis=S.done.includes(e.id)||S.st==='resolved';
+  ['btn-safe','btn-risk'].forEach(id=>{const b=document.getElementById(id);if(dis)b.classList.add('disabled');else b.classList.remove('disabled');});
+}
+
+function selectEmail(id){
+  if(S.st==='transit')return;
+  if(S.done.includes(id)){S.sel=id;S.st='arrived';S.cur=null;render();return;}
+  S.sel=id;S.st='transit';S.cur=null;render();
+  const p=document.getElementById('pkt');p.classList.remove('run');void p.offsetWidth;p.classList.add('run');
+  setTimeout(()=>{p.classList.remove('run');S.st='arrived';render();},1500);
+}
+
+function takeAction(a){
+  const e=S.emails.find(x=>x.id===S.sel);if(S.done.includes(e.id))return;
+  const ok=(a==='safe'&&e.type==='normal')||(a==='risk'&&e.type==='phishing');
+  S.cur={success:ok,message:ok?(a==='safe'?'判斷正確！這是安全的正常信件。':'太棒了！您成功識破詐騙手法。'):(a==='safe'?'危險！這是一封社交工程詐騙信件。':'哎呀！這是正常的公司內部信件。'),explanation:e.explanation};
+  S.st='resolved';S.done.push(e.id);S.res[e.id]=ok;
+  if(ok)S.ok++;else S.fail++;render();
+}
+
+function advanceToNext(){
+  if(S.done.length===S.emails.length){showFinal();return;}
+  const n=S.emails.find(x=>!S.done.includes(x.id));
+  if(n)selectEmail(n.id);else{S.st='idle';render();}
+}
+
+function showFinal(){
+  document.getElementById('fin-score').textContent=S.ok*10;
+  document.getElementById('fin-ok').textContent=S.ok;
+  document.getElementById('fin-fail').textContent=S.fail;
+  document.getElementById('final-overlay').style.display='flex';
+}
+
+function restartGame(){init();}
+window.onload=init;
+</script>
+</body>
+</html>
